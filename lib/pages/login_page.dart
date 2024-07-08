@@ -7,6 +7,7 @@ import 'package:garage_finder/services/auth_services.dart';
 
 class LoginPage extends StatefulWidget {
   final Function()? onTap;
+
   const LoginPage({super.key, required this.onTap});
 
   @override
@@ -14,19 +15,16 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  // text editing controllers
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
-  // sign user in method
   void signUserIn() async {
-    // Show loading circle
     showDialog(
       context: context,
-      barrierDismissible: false, // Prevent dismissal by tapping outside
+      barrierDismissible: false,
       builder: (context) {
         return const Center(
-          child: CircularProgressIndicator(),
+          child: CircularProgressIndicator(color: Colors.blue),
         );
       },
     );
@@ -35,27 +33,21 @@ class _LoginPageState extends State<LoginPage> {
       await FirebaseAuth.instance.signInWithEmailAndPassword(
           email: emailController.text, password: passwordController.text);
     } on FirebaseAuthException catch (e) {
-      Navigator.pop(context); // Close the loading dialog
-      // wrong email
+      Navigator.pop(context);
       if (e.code == 'user-not-found') {
-        // show error to user
         wrongEmailMessage();
-      }
-      // wrong password
-      else if (e.code == 'wrong-password') {
-        // show error to user
+      } else if (e.code == 'wrong-password') {
         wrongPasswordMessage();
       }
     } catch (e) {
-      // Handle other errors (e.g., network issues)
-      Navigator.pop(context); // Ensure the loading dialog is closed
+      Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error signing in: $e'),
         ),
       );
     } finally {
-      Navigator.pop(context); // Ensure the loading dialog is closed
+      Navigator.pop(context);
     }
   }
 
@@ -69,7 +61,7 @@ class _LoginPageState extends State<LoginPage> {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
+                Navigator.of(context).pop();
               },
               child: const Text('OK'),
             ),
@@ -89,7 +81,7 @@ class _LoginPageState extends State<LoginPage> {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
+                Navigator.of(context).pop();
               },
               child: const Text('OK'),
             ),
@@ -102,7 +94,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[300],
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -115,20 +107,35 @@ class _LoginPageState extends State<LoginPage> {
                 const Icon(
                   Icons.car_repair,
                   size: 100,
+                  color: Colors.blue,
                 ),
 
-                const SizedBox(height: 50),
+                const SizedBox(height: 20),
 
-                // here to serve!
+                // page title
                 Text(
-                  'Ready to locate the nearest garage 😎!',
+                  'Welcome Back!',
                   style: TextStyle(
-                    color: Colors.grey[700],
-                    fontSize: 16,
+                    color: Colors.blue[800],
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Roboto',
                   ),
                 ),
 
-                const SizedBox(height: 25),
+                const SizedBox(height: 10),
+
+                // subtitle
+                Text(
+                  'Ready to locate the nearest garage 😎!',
+                  style: TextStyle(
+                    color: Colors.blue[600],
+                    fontSize: 16,
+                    fontFamily: 'Roboto',
+                  ),
+                ),
+
+                const SizedBox(height: 30),
 
                 // email textfield
                 MyTextField(
@@ -137,7 +144,7 @@ class _LoginPageState extends State<LoginPage> {
                   obscureText: false,
                 ),
 
-                const SizedBox(height: 10),
+                const SizedBox(height: 15),
 
                 // password textfield
                 MyTextField(
@@ -149,20 +156,22 @@ class _LoginPageState extends State<LoginPage> {
                 const SizedBox(height: 10),
 
                 // forgot password?
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 25.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Text(
-                        'Forgot Password?',
-                        style: TextStyle(color: Colors.grey[600]),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 25.0),
+                    child: Text(
+                      'Forgot Password?',
+                      style: TextStyle(
+                        color: Colors.blue[600],
+                        fontSize: 14,
+                        fontFamily: 'Roboto',
                       ),
-                    ],
+                    ),
                   ),
                 ),
 
-                const SizedBox(height: 25),
+                const SizedBox(height: 30),
 
                 // sign in button
                 MyButton(
@@ -170,7 +179,7 @@ class _LoginPageState extends State<LoginPage> {
                   onTap: signUserIn,
                 ),
 
-                const SizedBox(height: 50),
+                const SizedBox(height: 40),
 
                 // or continue with
                 Padding(
@@ -180,42 +189,43 @@ class _LoginPageState extends State<LoginPage> {
                       Expanded(
                         child: Divider(
                           thickness: 0.5,
-                          color: Colors.grey[400],
+                          color: Colors.blue[200],
                         ),
                       ),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 10.0),
                         child: Text(
                           'Or continue with',
-                          style: TextStyle(color: Colors.grey[700]),
+                          style: TextStyle(
+                            color: Colors.blue[600],
+                            fontSize: 14,
+                            fontFamily: 'Roboto',
+                          ),
                         ),
                       ),
                       Expanded(
-                        child: Divider(thickness: 0.5, color: Colors.grey[400]),
+                        child: Divider(thickness: 0.5, color: Colors.blue[200]),
                       ),
                     ],
                   ),
                 ),
 
-                const SizedBox(height: 50),
+                const SizedBox(height: 30),
 
                 // google + apple sign in buttons
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // google button
                     SquareTile(
-                        onTap: () => AuthService().signInWithGoogle(),
-                        imagePath: 'lib/images/google.png'),
-
-                    SizedBox(width: 25),
-
-                    // apple button
-                    SquareTile(onTap: () {}, imagePath: 'lib/images/apple.png')
+                      onTap: () => AuthService().signInWithGoogle(),
+                      imagePath: 'lib/images/google.png',
+                    ),
+                    SizedBox(width: 20),
+                    SquareTile(onTap: () {}, imagePath: 'lib/images/apple.png'),
                   ],
                 ),
 
-                const SizedBox(height: 50),
+                const SizedBox(height: 40),
 
                 // not a member? register now
                 Row(
@@ -223,7 +233,10 @@ class _LoginPageState extends State<LoginPage> {
                   children: [
                     Text(
                       'Not a member?',
-                      style: TextStyle(color: Colors.grey[700]),
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 16,
+                      ),
                     ),
                     const SizedBox(width: 4),
                     GestureDetector(
@@ -233,11 +246,12 @@ class _LoginPageState extends State<LoginPage> {
                         style: TextStyle(
                           color: Colors.blue,
                           fontWeight: FontWeight.bold,
+                          fontSize: 16,
                         ),
                       ),
                     ),
                   ],
-                )
+                ),
               ],
             ),
           ),
