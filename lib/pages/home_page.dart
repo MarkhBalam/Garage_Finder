@@ -1,5 +1,6 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 // Define a color palette
 const Color primaryColor = Colors.blue;
@@ -13,6 +14,28 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  String? userName;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserName();
+  }
+
+  // Fetch user name from Firestore
+  Future<void> _fetchUserName() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      setState(() {
+        userName = userDoc.data()?['username'] ?? 'User';
+      });
+    }
+  }
+
   // Sign out user method
   void signUserOut() async {
     try {
@@ -26,9 +49,6 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    // Fetch the current user
-    final user = FirebaseAuth.instance.currentUser;
-
     return Scaffold(
       appBar: AppBar(
         backgroundColor: primaryColor,
@@ -39,20 +59,20 @@ class _HomePageState extends State<HomePage> {
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
-        children: const [
-          WelcomeBanner(),
-          SizedBox(height: 16),
-          SearchBar(),
-          SizedBox(height: 16),
-          QuickAccessButtons(),
-          SizedBox(height: 16),
-          RecentActivity(),
-          SizedBox(height: 16),
-          Notifications(),
-          SizedBox(height: 16),
-          SupportAndFeedback(),
-          SizedBox(height: 16),
-          UserAccountAndWallet(),
+        children: [
+          WelcomeBanner(userName: userName),
+          const SizedBox(height: 16),
+          const SearchBar(),
+          const SizedBox(height: 16),
+          const QuickAccessButtons(),
+          const SizedBox(height: 16),
+          const RecentActivity(),
+          const SizedBox(height: 16),
+          const Notifications(),
+          const SizedBox(height: 16),
+          const SupportAndFeedback(),
+          const SizedBox(height: 16),
+          const UserAccountAndWallet(),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -88,22 +108,34 @@ class _HomePageState extends State<HomePage> {
 }
 
 class WelcomeBanner extends StatelessWidget {
-  const WelcomeBanner({Key? key}) : super(key: key);
+  final String? userName;
+
+  const WelcomeBanner({Key? key, required this.userName}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       elevation: 5,
+      color: primaryColor,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              user != null ? 'Welcome, ${user.email}!' : 'Welcome, User!',
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              userName != null ? 'Welcome, $userName!' : 'Welcome!',
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: secondaryColor,
+              ),
+            ),
+            // Optional: Add a profile icon
+            Icon(
+              Icons.person,
+              size: 32,
+              color: secondaryColor,
             ),
           ],
         ),
