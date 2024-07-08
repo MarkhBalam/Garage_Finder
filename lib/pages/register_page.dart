@@ -1,73 +1,70 @@
 import 'package:flutter/material.dart';
-import 'package:garage_finder/components/my_button.dart';
-import 'package:garage_finder/components/my_textfield.dart';
-import 'package:garage_finder/components/square_tile.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:garage_finder/services/auth_services.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class RegisterPage extends StatefulWidget {
   final Function()? onTap;
-  const RegisterPage({super.key, required this.onTap});
+
+  const RegisterPage({Key? key, required this.onTap}) : super(key: key);
 
   @override
-  State<RegisterPage> createState() => _RegisterPageState();
+  _RegisterPageState createState() => _RegisterPageState();
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  // text editing controllers
-  final emailController = TextEditingController();
-  final passwordController = TextEditingController();
-  final confirmpasswordController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  final TextEditingController confirmpasswordController =
+      TextEditingController();
+  final TextEditingController userNameController = TextEditingController();
 
-  // sign user in method
-  void signUserUp() async {
-    // Show loading circle
-    showDialog(
-      context: context,
-      barrierDismissible: false, // Prevent dismissal by tapping outside
-      builder: (context) {
-        return const Center(
-          child: CircularProgressIndicator(),
-        );
-      },
-    );
+  bool isLoading = false;
+
+  void toggleLoading() {
+    setState(() {
+      isLoading = !isLoading;
+    });
+  }
+
+  Future<void> signUserUp() async {
+    if (passwordController.text != confirmpasswordController.text) {
+      showErrorMessage('Passwords do not match');
+      return;
+    }
+
+    toggleLoading();
 
     try {
-      //check if password is confirmed
-      if (passwordController.text == confirmpasswordController.text) {
-        await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email: emailController.text,
-          password: passwordController.text,
-        );
-      } else {
-        Navigator.pop(context); // Close the loading dialog
-        //show error message
-        showErrorMessage('Different passwords');
-        return; // Exit the function early
-      }
+      UserCredential userCredential =
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: emailController.text,
+        password: passwordController.text,
+      );
+
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userCredential.user!.uid)
+          .set({
+        'email': emailController.text,
+        'username': userNameController.text,
+      });
+
+      toggleLoading();
+      // Optionally show success message or navigate to another screen
     } on FirebaseAuthException catch (e) {
-      Navigator.pop(context); // Close the loading dialog
-      // wrong email
+      toggleLoading();
       if (e.code == 'email-already-in-use') {
-        // show error to user
         showErrorMessage('Email is already in use');
       } else if (e.code == 'weak-password') {
-        // show error to user
         showErrorMessage('Password is too weak');
       } else if (e.code == 'invalid-email') {
-        // show error to user
-        showErrorMessage('Invalid email');
+        showErrorMessage('Invalid email address');
+      } else {
+        showErrorMessage('Failed to create account: ${e.message}');
       }
     } catch (e) {
-      // Handle other errors (e.g., network issues)
-      Navigator.pop(context); // Ensure the loading dialog is closed
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error signing up: $e'),
-        ),
-      );
-    } finally {
-      Navigator.pop(context); // Ensure the loading dialog is closed
+      toggleLoading();
+      showErrorMessage('Error: $e');
     }
   }
 
@@ -81,7 +78,7 @@ class _RegisterPageState extends State<RegisterPage> {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
+                Navigator.of(context).pop();
               },
               child: const Text('OK'),
             ),
@@ -102,64 +99,50 @@ class _RegisterPageState extends State<RegisterPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const SizedBox(height: 25),
-
-                // logo
                 const Icon(
                   Icons.car_repair,
                   size: 50,
                 ),
-
                 const SizedBox(height: 25),
-
-                // here to serve!
                 Text(
-                  'Register with us😎!',
+                  'Register with us 😎!',
                   style: TextStyle(
                     color: Colors.grey[700],
                     fontSize: 16,
                   ),
                 ),
-
+                const SizedBox(height: 10),
+                MyTextField(
+                  controller: userNameController,
+                  hintText: 'Username',
+                  obscureText: false,
+                ),
                 const SizedBox(height: 25),
-
-                // email textfield
                 MyTextField(
                   controller: emailController,
                   hintText: 'Email',
                   obscureText: false,
                 ),
-
                 const SizedBox(height: 10),
-
-                // password textfield
                 MyTextField(
                   controller: passwordController,
                   hintText: 'Password',
                   obscureText: true,
                 ),
-
                 const SizedBox(height: 10),
-
-                //Confirm password textfield
                 MyTextField(
                   controller: confirmpasswordController,
                   hintText: 'Confirm Password',
                   obscureText: true,
                 ),
-
-                const SizedBox(height: 10),
-
                 const SizedBox(height: 25),
-
-                // sign in button
-                MyButton(
-                  text: 'Sign Up',
-                  onTap: signUserUp,
-                ),
-
+                isLoading
+                    ? CircularProgressIndicator()
+                    : MyButton(
+                        text: 'Sign Up',
+                        onTap: signUserUp,
+                      ),
                 const SizedBox(height: 50),
-
-                // or continue with
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 25.0),
                   child: Row(
@@ -178,33 +161,34 @@ class _RegisterPageState extends State<RegisterPage> {
                         ),
                       ),
                       Expanded(
-                        child: Divider(thickness: 0.5, color: Colors.grey[400]),
+                        child: Divider(
+                          thickness: 0.5,
+                          color: Colors.grey[400],
+                        ),
                       ),
                     ],
                   ),
                 ),
-
                 const SizedBox(height: 50),
-
-                // google + apple sign in buttons
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // google button
                     SquareTile(
-                        onTap: () => AuthService().signInWithGoogle(),
-                        imagePath: 'lib/images/google.png'),
-
+                      onTap: () {
+                        // Implement Google sign-in method
+                      },
+                      imagePath: 'lib/images/google.png',
+                    ),
                     SizedBox(width: 25),
-
-                    // apple button
-                    SquareTile(onTap: () {}, imagePath: 'lib/images/apple.png')
+                    SquareTile(
+                      onTap: () {
+                        // Implement Apple sign-in method
+                      },
+                      imagePath: 'lib/images/apple.png',
+                    )
                   ],
                 ),
-
                 const SizedBox(height: 50),
-
-                // not a member? register now
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -228,6 +212,102 @@ class _RegisterPageState extends State<RegisterPage> {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class MyTextField extends StatelessWidget {
+  final TextEditingController controller;
+  final String hintText;
+  final bool obscureText;
+
+  const MyTextField({
+    Key? key,
+    required this.controller,
+    required this.hintText,
+    this.obscureText = false,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 25.0),
+      child: TextField(
+        controller: controller,
+        obscureText: obscureText,
+        decoration: InputDecoration(
+          hintText: hintText,
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12.0),
+            borderSide: BorderSide.none,
+          ),
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: 15.0, horizontal: 20.0),
+        ),
+      ),
+    );
+  }
+}
+
+class MyButton extends StatelessWidget {
+  final String text;
+  final VoidCallback onTap;
+
+  const MyButton({
+    Key? key,
+    required this.text,
+    required this.onTap,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton(
+      onPressed: onTap,
+      child: Text(text),
+      style: ElevatedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(vertical: 15.0, horizontal: 25.0),
+      ),
+    );
+  }
+}
+
+class SquareTile extends StatelessWidget {
+  final VoidCallback onTap;
+  final String imagePath;
+
+  const SquareTile({
+    Key? key,
+    required this.onTap,
+    required this.imagePath,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 50,
+        height: 50,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12.0),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.5),
+              spreadRadius: 1,
+              blurRadius: 3,
+              offset: const Offset(0, 2), // changes position of shadow
+            ),
+          ],
+        ),
+        child: Image.asset(
+          imagePath,
+          width: 30,
+          height: 30,
         ),
       ),
     );
